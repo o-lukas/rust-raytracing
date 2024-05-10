@@ -7,8 +7,12 @@ fn main() {
     let image_height = 256;
 
     // Render
-
-    println!("P3\n{}\n{}\n255\n", image_width, image_height);
+    let mut image_lines = vec![
+        "P3".to_string(),
+        image_width.to_string(),
+        image_height.to_string(),
+        "255".to_string(),
+    ];
 
     for j in (0..image_height - 1).rev() {
         for i in 0..image_width {
@@ -20,7 +24,11 @@ fn main() {
             let ig = (255.999 * g) as i32;
             let ib = (255.999 * b) as i32;
 
-            println!("{} {} {}", ir, ig, ib);
+            image_lines.push(format!("{} {} {}", ir, ig, ib));
         }
     }
+
+    fs::write("image.ppm", image_lines.join("\n"))
+        .map_err(|err| println!("Error when writing image file: {:?}", err))
+        .ok();
 }
