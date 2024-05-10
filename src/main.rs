@@ -1,3 +1,5 @@
+pub mod ray;
+
 use std::fs;
 
 use nalgebra::Vector3;
