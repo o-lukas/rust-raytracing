@@ -2,17 +2,23 @@ use nalgebra::Vector3;
 
 use crate::{
     hittable::{HitRecord, Hittable},
+    material::Material,
     ray::Ray,
 };
 
 pub struct Sphere {
     center: Vector3<f32>,
     radius: f32,
+    material: Box<dyn Material>,
 }
 
 impl Sphere {
-    pub fn new(center: Vector3<f32>, radius: f32) -> Self {
-        Self { center, radius }
+    pub fn new(center: Vector3<f32>, radius: f32, material: Box<dyn Material>) -> Self {
+        Self {
+            center,
+            radius,
+            material,
+        }
     }
 
     pub fn center(&self) -> Vector3<f32> {
@@ -20,7 +26,11 @@ impl Sphere {
     }
 
     pub fn radius(&self) -> f32 {
-        return self.radius;
+        self.radius
+    }
+
+    pub fn material(&self) -> &Box<dyn Material> {
+        &self.material
     }
 }
 
@@ -49,7 +59,12 @@ impl Hittable for Sphere {
         let p = r.at(root);
         let outward_normal = (p - self.center) / self.radius;
 
-        let mut rec = HitRecord::new(p, Vector3::default(), root);
+        let mut rec = HitRecord::new(
+            p,
+            Vector3::default(),
+            root,
+            dyn_clone::clone_box(&*self.material),
+        );
         rec.set_face_normal(r, &outward_normal);
 
         Some(rec)

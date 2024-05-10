@@ -1,6 +1,6 @@
 use nalgebra::Vector3;
 
-use crate::ray::Ray;
+use crate::{material::Material, ray::Ray};
 
 pub trait Hittable: Sync {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
@@ -9,15 +9,17 @@ pub trait Hittable: Sync {
 pub struct HitRecord {
     p: Vector3<f32>,
     normal: Vector3<f32>,
+    material: Box<dyn Material>,
     t: f32,
     front_face: bool,
 }
 
 impl HitRecord {
-    pub fn new(p: Vector3<f32>, normal: Vector3<f32>, t: f32) -> Self {
+    pub fn new(p: Vector3<f32>, normal: Vector3<f32>, t: f32, material: Box<dyn Material>) -> Self {
         Self {
             p,
             normal,
+            material,
             t,
             front_face: false,
         }
@@ -29,6 +31,10 @@ impl HitRecord {
 
     pub fn normal(&self) -> Vector3<f32> {
         self.normal
+    }
+
+    pub fn material(&self) -> &Box<dyn Material> {
+        &self.material
     }
 
     pub fn t(&self) -> f32 {
