@@ -5,6 +5,10 @@ use std::fs;
 use nalgebra::Vector3;
 use ray::Ray;
 
+fn length_squared(v: &Vector3<f32>) -> f32 {
+    v.dot(&v)
+}
+
 fn color(r: f32, g: f32, b: f32) -> Vector3<f32> {
     Vector3::new(r, g, b)
 }
@@ -20,12 +24,12 @@ fn write_color(pixel_color: &Vector3<f32>) -> String {
 
 fn hit_sphere(center: &Vector3<f32>, radius: f32, r: &Ray) -> Option<f32> {
     let oc = r.origin() - center;
-    let a = r.direction().dot(&r.direction());
-    let b = 2.0 * oc.dot(&r.direction());
-    let c = oc.dot(&oc) - radius * radius;
-    let discriminant = b * b - 4.0 * a * c;
+    let a = length_squared(&r.direction());
+    let half_b = oc.dot(&r.direction());
+    let c = length_squared(&oc) - radius * radius;
+    let discriminant = half_b * half_b - a * c;
 
-    (discriminant >= 0.0).then(|| (-b - discriminant.sqrt()) / (2.0 * a))
+    (discriminant >= 0.0).then(|| (-half_b - discriminant.sqrt()) / a)
 }
 
 fn ray_color(r: &Ray) -> Vector3<f32> {
