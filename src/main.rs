@@ -15,6 +15,8 @@ fn main() {
     ];
 
     for j in (0..image_height - 1).rev() {
+        println!("Scanlines remaining: {}", j);
+
         for i in 0..image_width {
             let r = i as f32 / (image_width - 1) as f32;
             let g = j as f32 / (image_height - 1) as f32;
@@ -27,6 +29,8 @@ fn main() {
             image_lines.push(format!("{} {} {}", ir, ig, ib));
         }
     }
+
+    println!("Done.");
 
     fs::write("image.ppm", image_lines.join("\n"))
         .map_err(|err| println!("Error when writing image file: {:?}", err))
