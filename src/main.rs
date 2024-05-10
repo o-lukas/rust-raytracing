@@ -59,7 +59,7 @@ fn ray_color(r: &Ray, world: &dyn Hittable, depth: i32) -> Vector3<f32> {
     }
 
     if let Some(rec) = world.hit(r, 0.001, f32::MAX) {
-        let target = rec.p() + rec.normal() + random_vector_in_unit_sphere();
+        let target = rec.p() + rec.normal() + random_vector_in_unit_sphere().normalize();
         return 0.5
             * ray_color(
                 &Ray::new(rec.p().clone(), target - rec.p()),
