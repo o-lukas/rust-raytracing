@@ -32,9 +32,30 @@ fn write_color(pixel_color: &Vector3<f32>, samples_per_pixel: i32) -> String {
     )
 }
 
+fn random_vector(min: f32, max: f32) -> Vector3<f32> {
+    let mut rng = rand::thread_rng();
+    Vector3::new(
+        rng.gen_range(min..max),
+        rng.gen_range(min..max),
+        rng.gen_range(min..max),
+    )
+}
+
+fn random_vector_in_unit_sphere() -> Vector3<f32> {
+    loop {
+        let p = random_vector(-1.0, 1.0);
+        if p.dot(&p) >= 1.0 {
+            continue;
+        }
+
+        return p;
+    }
+}
+
 fn ray_color(r: &Ray, world: &dyn Hittable) -> Vector3<f32> {
     if let Some(rec) = world.hit(r, 0.0, f32::MAX) {
-        return 0.5 * (rec.normal() + Vector3::new(1.0, 1.0, 1.0));
+        let target = rec.p() + rec.normal() + random_vector_in_unit_sphere();
+        return 0.5 * ray_color(&Ray::new(rec.p().clone(), target - rec.p()), world);
     }
 
     let unit_direction = r.direction().normalize();
