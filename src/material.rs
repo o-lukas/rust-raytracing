@@ -37,3 +37,31 @@ impl Material for Lambertian {
         return Some((self.albedo(), Ray::new(rec.p().clone(), scatter_direction)));
     }
 }
+
+#[derive(Clone)]
+pub struct Metal {
+    albedo: Vector3<f32>,
+}
+
+impl Metal {
+    pub fn new(albedo: Vector3<f32>) -> Self {
+        Self { albedo }
+    }
+
+    pub fn albedo(&self) -> Vector3<f32> {
+        return self.albedo;
+    }
+
+    fn reflect(v: &Vector3<f32>, n: &Vector3<f32>) -> Vector3<f32> {
+        return v - 2.0 * v.dot(n) * n;
+    }
+}
+
+impl Material for Metal {
+    fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Vector3<f32>, Ray)> {
+        let reflected = Metal::reflect(&r_in.direction().normalize(), &rec.normal());
+        let scattered = Ray::new(rec.p().clone(), reflected);
+
+        (scattered.direction().dot(&rec.normal()) > 0.0).then_some((self.albedo(), scattered))
+    }
+}

@@ -47,14 +47,6 @@ fn random_vector_in_unit_sphere() -> Vector3<f32> {
     }
 }
 
-fn random_vector_in_hemisphere(normal: &Vector3<f32>) -> Vector3<f32> {
-    let mut in_unit_sphere = random_vector_in_unit_sphere();
-    if in_unit_sphere.dot(normal) <= 0.0 {
-        in_unit_sphere *= -1.0;
-    }
-    return in_unit_sphere;
-}
-
 fn ray_color(r: &Ray, world: &dyn Hittable, depth: i32) -> Vector3<f32> {
     // If we've exceeded the ray bounce limi, no more light is gathered
     if depth <= 0 {
@@ -62,13 +54,11 @@ fn ray_color(r: &Ray, world: &dyn Hittable, depth: i32) -> Vector3<f32> {
     }
 
     if let Some(rec) = world.hit(r, 0.001, f32::MAX) {
-        let target = rec.p() + random_vector_in_hemisphere(&rec.normal());
-        return 0.5
-            * ray_color(
-                &Ray::new(rec.p().clone(), target - rec.p()),
-                world,
-                depth - 1,
-            );
+        if let Some((attenuation, scattered)) = rec.material().scatter(&r, &rec) {
+            return attenuation.zip_map(&ray_color(&scattered, world, depth - 1), |l, r| l * r);
+        }
+
+        return color(0.0, 0.0, 0.0);
     }
 
     let unit_direction = r.direction().normalize();
