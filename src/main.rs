@@ -17,11 +17,11 @@ fn color(r: f32, g: f32, b: f32) -> Vector3<f32> {
 }
 
 fn write_color(pixel_color: &Vector3<f32>, samples_per_pixel: i32) -> String {
-    // Divide the color by the number of samples
+    // Divide the color by the number of samples and gamma-correct for gamma=2.0
     let scale = 1.0 / samples_per_pixel as f32;
-    let r = pixel_color[0] * scale;
-    let g = pixel_color[1] * scale;
-    let b = pixel_color[2] * scale;
+    let r = (pixel_color[0] * scale).sqrt();
+    let g = (pixel_color[1] * scale).sqrt();
+    let b = (pixel_color[2] * scale).sqrt();
 
     // Write the translated [0,255] value of each color component.
     format!(
