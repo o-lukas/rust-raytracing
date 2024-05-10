@@ -2,14 +2,13 @@ pub mod hittable;
 pub mod ray;
 pub mod sphere;
 
-use std::fs;
+use std::{fs, rc::Rc};
 
+use hittable::Hittable;
 use nalgebra::Vector3;
 use ray::Ray;
 
-fn length_squared(v: &Vector3<f32>) -> f32 {
-    v.dot(&v)
-}
+use crate::{hittable::HittableList, sphere::Sphere};
 
 fn color(r: f32, g: f32, b: f32) -> Vector3<f32> {
     Vector3::new(r, g, b)
@@ -24,20 +23,9 @@ fn write_color(pixel_color: &Vector3<f32>) -> String {
     )
 }
 
-fn hit_sphere(center: &Vector3<f32>, radius: f32, r: &Ray) -> Option<f32> {
-    let oc = r.origin() - center;
-    let a = length_squared(&r.direction());
-    let half_b = oc.dot(&r.direction());
-    let c = length_squared(&oc) - radius * radius;
-    let discriminant = half_b * half_b - a * c;
-
-    (discriminant >= 0.0).then(|| (-half_b - discriminant.sqrt()) / a)
-}
-
-fn ray_color(r: &Ray) -> Vector3<f32> {
-    if let Some(t) = hit_sphere(&Vector3::new(0.0, 0.0, -1.0), 0.5, r) {
-        let n = (r.at(t) - Vector3::new(0.0, 0.0, -1.0)).normalize();
-        return 0.5 * color(n.x + 1.0, n.y + 1.0, n.z + 1.0);
+fn ray_color(r: &Ray, world: &dyn Hittable) -> Vector3<f32> {
+    if let Some(rec) = world.hit(r, 0.0, f32::MAX) {
+        return 0.5 * (rec.normal() + Vector3::new(1.0, 1.0, 1.0));
     }
 
     let unit_direction = r.direction().normalize();
@@ -50,6 +38,11 @@ fn main() {
     let aspect_ratio = 16.0 / 9.0;
     let image_width = 400;
     let image_height = (image_width as f32 / aspect_ratio) as i32;
+
+    // World
+    let mut world = HittableList::new();
+    world.add(Rc::new(Sphere::new(Vector3::new(0.0, 0.0, -1.0), 0.5)));
+    world.add(Rc::new(Sphere::new(Vector3::new(0.0, -100.5, -1.0), 100.0)));
 
     // Camera
     let viewport_height = 2.0;
@@ -80,7 +73,7 @@ fn main() {
                 origin,
                 lower_left_corner + u * horizontal + v * vertical - origin,
             );
-            let pixel_color = ray_color(&r);
+            let pixel_color = ray_color(&r, &world);
             image_lines.push(write_color(&pixel_color));
         }
     }
