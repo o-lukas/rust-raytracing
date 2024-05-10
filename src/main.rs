@@ -18,7 +18,20 @@ fn write_color(pixel_color: &Vector3<f32>) -> String {
     )
 }
 
+fn hit_sphere(center: &Vector3<f32>, radius: f32, r: &Ray) -> bool {
+    let oc = r.origin() - center;
+    let a = r.direction().dot(&r.direction());
+    let b = 2.0 * oc.dot(&r.direction());
+    let c = oc.dot(&oc) - radius * radius;
+    let discriminant = b * b - 4.0 * a * c;
+    return discriminant > 0.0;
+}
+
 fn ray_color(r: &Ray) -> Vector3<f32> {
+    if hit_sphere(&Vector3::new(0.0, 0.0, -1.0), 0.5, r) {
+        return color(1.0, 0.0, 0.0);
+    }
+
     let unit_direction = r.direction().normalize();
     let t = 0.5 * (unit_direction.y + 1.0);
     (1.0 - t) * color(1.0, 1.0, 1.0) + t * color(0.5, 0.7, 1.0)
