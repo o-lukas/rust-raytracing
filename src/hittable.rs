@@ -1,10 +1,8 @@
-use std::rc::Rc;
-
 use nalgebra::Vector3;
 
 use crate::ray::Ray;
 
-pub trait Hittable {
+pub trait Hittable: Sync {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
 }
 
@@ -47,7 +45,7 @@ impl HitRecord {
 }
 
 pub struct HittableList {
-    objects: Vec<Rc<dyn Hittable>>,
+    objects: Vec<Box<dyn Hittable>>,
 }
 
 impl HittableList {
@@ -61,8 +59,8 @@ impl HittableList {
         self.objects.clear();
     }
 
-    pub fn add(&mut self, object: Rc<dyn Hittable>) {
-        self.objects.push(object);
+    pub fn add(&mut self, object: impl Hittable + 'static) {
+        self.objects.push(Box::new(object));
     }
 }
 
