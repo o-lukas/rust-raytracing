@@ -1,5 +1,20 @@
 use std::fs;
 
+use nalgebra::Vector3;
+
+fn color(r: f32, g: f32, b: f32) -> Vector3<f32> {
+    Vector3::new(r, g, b)
+}
+
+fn write_color(pixel_color: &Vector3<f32>) -> String {
+    format!(
+        "{} {} {}",
+        (pixel_color[0] * 255.999) as i32,
+        (pixel_color[1] * 255.999) as i32,
+        (pixel_color[2] * 255.999) as i32
+    )
+}
+
 fn main() {
     // Image
 
@@ -18,15 +33,12 @@ fn main() {
         println!("Scanlines remaining: {}", j);
 
         for i in 0..image_width {
-            let r = i as f32 / (image_width - 1) as f32;
-            let g = j as f32 / (image_height - 1) as f32;
-            let b = 0.25;
-
-            let ir = (255.999 * r) as i32;
-            let ig = (255.999 * g) as i32;
-            let ib = (255.999 * b) as i32;
-
-            image_lines.push(format!("{} {} {}", ir, ig, ib));
+            let pixel_color = color(
+                i as f32 / (image_width - 1) as f32,
+                j as f32 / (image_height - 1) as f32,
+                0.25,
+            );
+            image_lines.push(write_color(&pixel_color));
         }
     }
 
