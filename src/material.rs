@@ -72,3 +72,39 @@ impl Material for Metal {
         (scattered.direction().dot(&rec.normal()) > 0.0).then_some((self.albedo(), scattered))
     }
 }
+
+#[derive(Clone)]
+pub struct Dielectric {
+    ir: f32, // Index of Refraction
+}
+
+impl Dielectric {
+    pub fn new(ir: f32) -> Self {
+        Self { ir }
+    }
+
+    pub fn ir(&self) -> f32 {
+        self.ir
+    }
+
+    pub fn refract(uv: &Vector3<f32>, n: &Vector3<f32>, etai_over_etat: f32) -> Vector3<f32> {
+        let cos_theta = (-uv).dot(n).min(1.0);
+        let r_out_perp = etai_over_etat * (uv + cos_theta * n);
+        let r_out_parallel = (1.0 - r_out_perp.dot(&r_out_perp)).abs().sqrt() * -n;
+        return r_out_perp + r_out_parallel;
+    }
+}
+
+impl Material for Dielectric {
+    fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Vector3<f32>, Ray)> {
+        let refraction_ratio = rec.front_face().then(|| 1.0 / self.ir).unwrap_or(self.ir);
+
+        let unit_direction = r_in.direction().normalize();
+        let refracted = Dielectric::refract(&unit_direction, &rec.normal(), refraction_ratio);
+
+        return Some((
+            Vector3::new(1.0, 1.0, 1.0),
+            Ray::new(rec.p().clone(), refracted),
+        ));
+    }
+}

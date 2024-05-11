@@ -15,7 +15,7 @@ use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterato
 use crate::{
     camera::Camera,
     hittable::HittableList,
-    material::{Lambertian, Metal},
+    material::{Dielectric, Lambertian, Metal},
     sphere::Sphere,
 };
 
@@ -82,8 +82,8 @@ fn main() {
     // World
     let mut world = HittableList::new();
     let material_ground = Box::new(Lambertian::new(color(0.8, 0.8, 0.0)));
-    let material_center = Box::new(Lambertian::new(color(0.7, 0.3, 0.3)));
-    let material_left = Box::new(Metal::new(color(0.8, 0.8, 0.8), 0.3));
+    let material_center = Box::new(Dielectric::new(1.5));
+    let material_left = Box::new(Dielectric::new(1.5));
     let material_right = Box::new(Metal::new(color(0.8, 0.6, 0.2), 1.0));
 
     world.add(Sphere::new(
