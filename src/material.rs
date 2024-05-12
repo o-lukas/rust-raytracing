@@ -3,6 +3,17 @@ use nalgebra::Vector3;
 
 use crate::{hittable::HitRecord, random_vector_in_unit_sphere, ray::Ray};
 
+fn reflect(v: &Vector3<f32>, n: &Vector3<f32>) -> Vector3<f32> {
+    return v - 2.0 * v.dot(n) * n;
+}
+
+fn refract(uv: &Vector3<f32>, n: &Vector3<f32>, etai_over_etat: f32) -> Vector3<f32> {
+    let cos_theta = (-uv).dot(n).min(1.0);
+    let r_out_perp = etai_over_etat * (uv + cos_theta * n);
+    let r_out_parallel = (1.0 - r_out_perp.dot(&r_out_perp)).abs().sqrt() * -n;
+    return r_out_perp + r_out_parallel;
+}
+
 pub trait Material: Sync + DynClone {
     fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Vector3<f32>, Ray)>;
 }
@@ -55,15 +66,11 @@ impl Metal {
     pub fn albedo(&self) -> Vector3<f32> {
         return self.albedo;
     }
-
-    fn reflect(v: &Vector3<f32>, n: &Vector3<f32>) -> Vector3<f32> {
-        return v - 2.0 * v.dot(n) * n;
-    }
 }
 
 impl Material for Metal {
     fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Vector3<f32>, Ray)> {
-        let reflected = Metal::reflect(&r_in.direction().normalize(), &rec.normal());
+        let reflected = reflect(&r_in.direction().normalize(), &rec.normal());
         let scattered = Ray::new(
             rec.p().clone(),
             reflected + self.fuzz * random_vector_in_unit_sphere(),
@@ -86,13 +93,6 @@ impl Dielectric {
     pub fn ir(&self) -> f32 {
         self.ir
     }
-
-    pub fn refract(uv: &Vector3<f32>, n: &Vector3<f32>, etai_over_etat: f32) -> Vector3<f32> {
-        let cos_theta = (-uv).dot(n).min(1.0);
-        let r_out_perp = etai_over_etat * (uv + cos_theta * n);
-        let r_out_parallel = (1.0 - r_out_perp.dot(&r_out_perp)).abs().sqrt() * -n;
-        return r_out_perp + r_out_parallel;
-    }
 }
 
 impl Material for Dielectric {
@@ -100,11 +100,21 @@ impl Material for Dielectric {
         let refraction_ratio = rec.front_face().then(|| 1.0 / self.ir).unwrap_or(self.ir);
 
         let unit_direction = r_in.direction().normalize();
-        let refracted = Dielectric::refract(&unit_direction, &rec.normal(), refraction_ratio);
+        let cos_theta = (-unit_direction).dot(&rec.normal()).min(1.0);
+        let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
+
+        let cannot_refract = refraction_ratio * sin_theta > 1.0;
+        let direction: Vector3<f32>;
+
+        if cannot_refract {
+            direction = reflect(&unit_direction, &rec.normal());
+        } else {
+            direction = refract(&unit_direction, &rec.normal(), refraction_ratio);
+        }
 
         return Some((
             Vector3::new(1.0, 1.0, 1.0),
-            Ray::new(rec.p().clone(), refracted),
+            Ray::new(rec.p().clone(), direction),
         ));
     }
 }
