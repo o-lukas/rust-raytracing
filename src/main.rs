@@ -4,7 +4,7 @@ pub mod material;
 pub mod ray;
 pub mod sphere;
 
-use std::fs;
+use std::{f32::consts::PI, fs};
 
 use hittable::Hittable;
 use nalgebra::Vector3;
@@ -12,12 +12,7 @@ use rand::Rng;
 use ray::Ray;
 use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
 
-use crate::{
-    camera::Camera,
-    hittable::HittableList,
-    material::{Dielectric, Lambertian, Metal},
-    sphere::Sphere,
-};
+use crate::{camera::Camera, hittable::HittableList, material::Lambertian, sphere::Sphere};
 
 fn color(r: f32, g: f32, b: f32) -> Vector3<f32> {
     Vector3::new(r, g, b)
@@ -80,40 +75,17 @@ fn main() {
     let max_depth = 50;
 
     // World
+    let r = (PI / 4.0).cos();
     let mut world = HittableList::new();
-    let material_ground = Box::new(Lambertian::new(color(0.8, 0.8, 0.0)));
-    let material_center = Box::new(Lambertian::new(color(0.1, 0.2, 0.5)));
-    let material_left = Box::new(Dielectric::new(1.5));
-    let material_right = Box::new(Metal::new(color(0.8, 0.6, 0.2), 0.0));
 
-    world.add(Sphere::new(
-        Vector3::new(0.0, -100.5, -1.0),
-        100.0,
-        material_ground,
-    ));
-    world.add(Sphere::new(
-        Vector3::new(0.0, 0.0, -1.0),
-        0.5,
-        material_center,
-    ));
-    world.add(Sphere::new(
-        Vector3::new(-1.0, 0.0, -1.0),
-        0.5,
-        material_left.clone(),
-    ));
-    world.add(Sphere::new(
-        Vector3::new(-1.0, 0.0, -1.0),
-        -0.4,
-        material_left.clone(),
-    ));
-    world.add(Sphere::new(
-        Vector3::new(1.0, 0.0, -1.0),
-        0.5,
-        material_right,
-    ));
+    let material_left = Box::new(Lambertian::new(color(0.0, 0.0, 1.0)));
+    let material_right = Box::new(Lambertian::new(color(1.0, 0.0, 0.0)));
+
+    world.add(Sphere::new(Vector3::new(-r, 0.0, -1.0), r, material_left));
+    world.add(Sphere::new(Vector3::new(r, 0.0, -1.0), r, material_right));
 
     // Camera
-    let cam = Camera::new();
+    let cam = Camera::new(90.0, aspect_ratio);
 
     // Render
     let mut image_lines = vec![
