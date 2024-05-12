@@ -1,5 +1,8 @@
+use core::f32;
+
 use dyn_clone::DynClone;
 use nalgebra::Vector3;
+use rand::Rng;
 
 use crate::{hittable::HitRecord, random_vector_in_unit_sphere, ray::Ray};
 
@@ -12,6 +15,13 @@ fn refract(uv: &Vector3<f32>, n: &Vector3<f32>, etai_over_etat: f32) -> Vector3<
     let r_out_perp = etai_over_etat * (uv + cos_theta * n);
     let r_out_parallel = (1.0 - r_out_perp.dot(&r_out_perp)).abs().sqrt() * -n;
     return r_out_perp + r_out_parallel;
+}
+
+fn reflectance(cosine: f32, ref_idx: f32) -> f32 {
+    // Use Schlick's approximation for reflectance.
+    let mut r0 = (1.0 - ref_idx) / (1.0 + ref_idx);
+    r0 = r0 * r0;
+    return r0 + (1.0 - r0) * (1.0 - cosine).powf(5.0);
 }
 
 pub trait Material: Sync + DynClone {
@@ -106,7 +116,8 @@ impl Material for Dielectric {
         let cannot_refract = refraction_ratio * sin_theta > 1.0;
         let direction: Vector3<f32>;
 
-        if cannot_refract {
+        let mut rng = rand::thread_rng();
+        if cannot_refract || reflectance(cos_theta, refraction_ratio) > rng.gen_range(0.0..1.0) {
             direction = reflect(&unit_direction, &rec.normal());
         } else {
             direction = refract(&unit_direction, &rec.normal(), refraction_ratio);
