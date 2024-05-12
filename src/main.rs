@@ -71,54 +71,84 @@ fn ray_color(r: &Ray, world: &dyn Hittable, depth: i32) -> Vector3<f32> {
     (1.0 - t) * color(1.0, 1.0, 1.0) + t * color(0.5, 0.7, 1.0)
 }
 
+fn random_scene() -> HittableList {
+    let mut rng = rand::thread_rng();
+    let mut world = HittableList::new();
+
+    let ground_material = Box::new(Lambertian::new(color(0.5, 0.5, 0.5)));
+    world.add(Sphere::new(
+        Vector3::new(0.0, -1000.0, 0.0),
+        1000.0,
+        ground_material,
+    ));
+
+    for a in -11..11 {
+        for b in -11..11 {
+            let choose_mat = rng.gen_range(0.0..1.0);
+            let center = Vector3::new(
+                a as f32 + 0.9 * rng.gen_range(0.0..1.0),
+                0.2,
+                b as f32 + 0.9 * rng.gen_range(0.0..1.0),
+            );
+
+            if (center - Vector3::new(4.0, 0.2, 0.0)).magnitude() > 0.9 {
+                if choose_mat < 0.8 {
+                    world.add(Sphere::new(
+                        center,
+                        0.2,
+                        Box::new(Lambertian::new(random_vector(0.0, 1.0))),
+                    ))
+                } else if choose_mat < 0.95 {
+                    world.add(Sphere::new(
+                        center,
+                        0.2,
+                        Box::new(Metal::new(random_vector(0.5, 1.0), rng.gen_range(0.0..0.5))),
+                    ))
+                } else {
+                    world.add(Sphere::new(center, 0.2, Box::new(Dielectric::new(1.5))));
+                }
+            }
+        }
+    }
+
+    world.add(Sphere::new(
+        Vector3::new(0.0, 1.0, 0.0),
+        1.0,
+        Box::new(Dielectric::new(1.5)),
+    ));
+
+    world.add(Sphere::new(
+        Vector3::new(-4.0, 1.0, 0.0),
+        1.0,
+        Box::new(Lambertian::new(color(0.4, 0.2, 0.1))),
+    ));
+
+    world.add(Sphere::new(
+        Vector3::new(4.0, 1.0, 0.0),
+        1.0,
+        Box::new(Metal::new(color(0.7, 0.6, 0.5), 0.0)),
+    ));
+
+    return world;
+}
+
 fn main() {
     // Image
-    let aspect_ratio = 16.0 / 9.0;
-    let image_width = 400;
+    let aspect_ratio = 3.0 / 2.0;
+    let image_width = 1200;
     let image_height = (image_width as f32 / aspect_ratio) as i32;
-    let samples_per_pixel = 100;
+    let samples_per_pixel = 500;
     let max_depth = 50;
 
     // World
-    let mut world = HittableList::new();
-
-    let material_ground = Box::new(Lambertian::new(color(0.8, 0.8, 0.0)));
-    let material_center = Box::new(Lambertian::new(color(0.1, 0.2, 0.5)));
-    let material_left = Box::new(Dielectric::new(1.5));
-    let material_right = Box::new(Metal::new(color(0.8, 0.6, 0.2), 0.0));
-
-    world.add(Sphere::new(
-        Vector3::new(0.0, -100.5, -1.0),
-        100.0,
-        material_ground,
-    ));
-    world.add(Sphere::new(
-        Vector3::new(0.0, 0.0, -1.0),
-        0.5,
-        material_center,
-    ));
-    world.add(Sphere::new(
-        Vector3::new(-1.0, 0.0, -1.0),
-        0.5,
-        material_left.clone(),
-    ));
-    world.add(Sphere::new(
-        Vector3::new(-1.0, 0.0, -1.0),
-        -0.45,
-        material_left.clone(),
-    ));
-    world.add(Sphere::new(
-        Vector3::new(1.0, 0.0, -1.0),
-        0.5,
-        material_right,
-    ));
+    let world = random_scene();
 
     // Camera
-    let lookfrom = Vector3::new(3.0, 3.0, 2.0);
-    let lookat = Vector3::new(0.0, 0.0, -1.0);
+    let lookfrom = Vector3::new(13.0, 2.0, 3.0);
+    let lookat = Vector3::new(0.0, 0.0, 0.0);
     let vup = Vector3::new(0.0, 1.0, 0.0);
-    let dist_to_focus = (&lookfrom - &lookat).magnitude();
-    let aperture = 2.0;
+    let dist_to_focus = 10.0;
+    let aperture = 0.1;
 
     let cam = Camera::new(
         lookfrom,
