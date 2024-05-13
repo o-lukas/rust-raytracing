@@ -9,6 +9,8 @@ use image::{ImageBuffer, Rgb, RgbImage};
 use nalgebra::Vector3;
 use rand::Rng;
 use ray::Ray;
+use rayon::iter::ParallelIterator;
+use rayon_progress::ProgressAdaptor;
 
 use crate::{
     camera::Camera,
@@ -137,6 +139,7 @@ fn main() {
     let image_height = (image_width as f32 / aspect_ratio) as u32;
     let samples_per_pixel = 500;
     let max_depth = 50;
+    let number_of_pixels = image_height as usize * image_width as usize;
 
     // World
     let world = random_scene();
@@ -159,7 +162,9 @@ fn main() {
     );
 
     let mut buffer: RgbImage = ImageBuffer::new(image_width, image_height);
-    buffer.enumerate_pixels_mut().for_each(|(x, y, pixel)| {
+    let it = ProgressAdaptor::new(buffer.par_enumerate_pixels_mut());
+    let progress = it.items_processed();
+    it.for_each(|(x, y, pixel)| {
         let pixel_color: Vector3<f32> = (0..samples_per_pixel)
             .map(|_| {
                 let mut rng = rand::thread_rng();
@@ -175,6 +180,8 @@ fn main() {
             write_color_component(&pixel_color[1], samples_per_pixel),
             write_color_component(&pixel_color[2], samples_per_pixel),
         ]);
+
+        print!("\r{}%", (progress.get() * 100) / number_of_pixels);
     });
 
     println!("Done.");
