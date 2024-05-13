@@ -1,7 +1,11 @@
-# Rust-Raytracing
+# Ray Tracing in One Weekend (in Rust)
 
-This repository contains my first steps using Rust. 
+This is a Rust implementation of [*Ray Tracing in One Weekend*](https://raytracing.github.io/v3/books/RayTracingInOneWeekend.html). It was implemeneted based on version 3.2.3 of the book. Implementation should be pretty close to the C++ implementation of the book but there are some differences due to the language differences.
 
-To get familiar with the programming language and eco-system I will try to implement the [Ray Tracing in One Weekend](https://github.com/RayTracing/raytracing.github.io) project.
+The [vec3 class](https://raytracing.github.io/v3/books/RayTracingInOneWeekend.html#thevec3class) was not implemented in favor of the [Vector3](https://docs.rs/nalgebra/latest/nalgebra/base/type.Vector3.html) class of [nalgebra](https://docs.rs/nalgebra/latest/nalgebra/).
 
-I will try to create a single commit for each chapter of the book. But as I was going through the first chapters I learned that I must amend previous code pretty often, so there might be additional commits for code of previous chapters later on.
+There is a commit for every chapter that contains code snippets. Not every commit contains compilable code because the chapters sometimes do not produce compilable code.
+
+## Disclaimer
+
+I'm quite new to Rust. I was looking for a project which I could adopt to Rust to get to know the language better. So there might be better approaches for this. If you have any improvement proposals please let me know!
