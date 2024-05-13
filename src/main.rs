@@ -4,6 +4,8 @@ pub mod material;
 pub mod ray;
 pub mod sphere;
 
+use std::time::Instant;
+
 use hittable::Hittable;
 use image::{ImageBuffer, Rgb, RgbImage};
 use nalgebra::Vector3;
@@ -161,6 +163,8 @@ fn main() {
         dist_to_focus,
     );
 
+    let start = Instant::now();
+
     let mut buffer: RgbImage = ImageBuffer::new(image_width, image_height);
     let it = ProgressAdaptor::new(buffer.par_enumerate_pixels_mut());
     let progress = it.items_processed();
@@ -181,10 +185,14 @@ fn main() {
             write_color_component(&pixel_color[2], samples_per_pixel),
         ]);
 
-        print!("\r{}%", (progress.get() * 100) / number_of_pixels);
+        print!(
+            "\r{}% ({:?}s elapsed)",
+            (progress.get() * 100) / number_of_pixels,
+            start.elapsed().as_secs()
+        );
     });
 
-    println!("Done.");
+    println!("Rendering image took {:?}", start.elapsed());
 
     buffer
         .save("image.png")
