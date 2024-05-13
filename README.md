@@ -6,6 +6,10 @@ The [vec3 class](https://raytracing.github.io/v3/books/RayTracingInOneWeekend.ht
 
 There is a commit for every chapter that contains code snippets. Not every commit contains compilable code because the chapters sometimes do not produce compilable code.
 
+Furthermore the process of rendering has been parallelized and the output image was generated as PNG using the [image](https://docs.rs/image/latest/image/index.html) crate.
+
+![Rendering Result of last chapter](./image.png)
+
 ## Disclaimer
 
 I'm quite new to Rust. I was looking for a project which I could adopt to Rust to get to know the language better. So there might be better approaches for this. If you have any improvement proposals please let me know!
