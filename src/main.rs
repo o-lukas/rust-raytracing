@@ -4,13 +4,11 @@ pub mod material;
 pub mod ray;
 pub mod sphere;
 
-use std::fs;
-
 use hittable::Hittable;
+use image::{ImageBuffer, Rgb, RgbImage};
 use nalgebra::Vector3;
 use rand::Rng;
 use ray::Ray;
-use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
 
 use crate::{
     camera::Camera,
@@ -23,13 +21,13 @@ fn color(r: f32, g: f32, b: f32) -> Vector3<f32> {
     Vector3::new(r, g, b)
 }
 
-fn write_color_component(component: &f32, samples_per_pixel: i32) -> i32 {
+fn write_color_component(component: &f32, samples_per_pixel: i32) -> u8 {
     // Divide the color by the number of samples and gamma-correct for gamma=2.0
     let scale = 1.0 / samples_per_pixel as f32;
     let c = (component * scale).sqrt();
 
     // Write the translated [0,255] value of each color component.
-    return (256.0 * c.clamp(0.0, 0.999)) as i32;
+    return (256.0 * c.clamp(0.0, 0.999)) as u8;
 }
 
 fn random_vector(min: f32, max: f32) -> Vector3<f32> {
@@ -136,7 +134,7 @@ fn main() {
     // Image
     let aspect_ratio = 3.0 / 2.0;
     let image_width = 1200;
-    let image_height = (image_width as f32 / aspect_ratio) as i32;
+    let image_height = (image_width as f32 / aspect_ratio) as u32;
     let samples_per_pixel = 500;
     let max_depth = 50;
 
@@ -160,53 +158,29 @@ fn main() {
         dist_to_focus,
     );
 
-    // Render
-    let mut image_lines = vec![
-        "P3".to_string(),
-        image_width.to_string(),
-        image_height.to_string(),
-        "255".to_string(),
-    ];
-
-    let image = (0..(image_height - 1))
-        .into_par_iter()
-        .rev()
-        .flat_map(|j| {
-            (0..image_width)
-                .flat_map(|i| {
-                    println!(
-                        "Row {}/{}: Column {}/{}",
-                        j,
-                        image_height,
-                        i + 1,
-                        image_width
-                    );
-
-                    let pixel_color: Vector3<f32> = (0..samples_per_pixel)
-                        .map(|_| {
-                            let mut rng = rand::thread_rng();
-                            let u = (i as f32 + rng.gen::<f32>()) / (image_width - 1) as f32;
-                            let v = (j as f32 + rng.gen::<f32>()) / (image_height - 1) as f32;
-                            let r = cam.get_ray(u, v);
-                            ray_color(&r, &world, max_depth)
-                        })
-                        .sum();
-                    pixel_color
-                        .iter()
-                        .map(|comp| write_color_component(comp, samples_per_pixel))
-                        .collect::<Vec<i32>>()
-                })
-                .collect::<Vec<i32>>()
-        })
-        .collect::<Vec<i32>>();
-
-    for chunk in image.chunks(3) {
-        image_lines.push(format!("{} {} {}", chunk[0], chunk[1], chunk[2]));
-    }
+    let mut buffer: RgbImage = ImageBuffer::new(image_width, image_height);
+    buffer.enumerate_pixels_mut().for_each(|(x, y, pixel)| {
+        let pixel_color: Vector3<f32> = (0..samples_per_pixel)
+            .map(|_| {
+                let mut rng = rand::thread_rng();
+                let u = (x as f32 + rng.gen::<f32>()) / (image_width - 1) as f32;
+                let v =
+                    ((image_height - y - 1) as f32 + rng.gen::<f32>()) / (image_height - 1) as f32;
+                let r = cam.get_ray(u, v);
+                ray_color(&r, &world, max_depth)
+            })
+            .sum();
+        *pixel = Rgb([
+            write_color_component(&pixel_color[0], samples_per_pixel),
+            write_color_component(&pixel_color[1], samples_per_pixel),
+            write_color_component(&pixel_color[2], samples_per_pixel),
+        ]);
+    });
 
     println!("Done.");
 
-    fs::write("image.ppm", image_lines.join("\n"))
+    buffer
+        .save("image.png")
         .map_err(|err| println!("Error when writing image file: {:?}", err))
         .ok();
 }
