@@ -8,6 +8,7 @@ use std::time::Instant;
 
 use hittable::Hittable;
 use image::{ImageBuffer, Rgb, RgbImage};
+use indicatif::ProgressBar;
 use nalgebra::Vector3;
 use rand::Rng;
 use ray::Ray;
@@ -165,6 +166,7 @@ fn main() {
 
     let start = Instant::now();
 
+    let progress_bar = ProgressBar::new(number_of_pixels as u64);
     let mut buffer: RgbImage = ImageBuffer::new(image_width, image_height);
     let it = ProgressAdaptor::new(buffer.par_enumerate_pixels_mut());
     let progress = it.items_processed();
@@ -185,12 +187,10 @@ fn main() {
             write_color_component(&pixel_color[2], samples_per_pixel),
         ]);
 
-        print!(
-            "\r{}% ({:?}s elapsed)",
-            (progress.get() * 100) / number_of_pixels,
-            start.elapsed().as_secs()
-        );
+        progress_bar.set_position(progress.get() as u64);
     });
+
+    progress_bar.set_position(number_of_pixels as u64);
 
     println!("Rendering image took {:?}", start.elapsed());
 
