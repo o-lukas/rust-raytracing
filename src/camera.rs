@@ -10,7 +10,7 @@ pub struct Camera {
     vertical: Vector3<f32>,
     u: Vector3<f32>,
     v: Vector3<f32>,
-    w: Vector3<f32>,
+    // w: Vector3<f32>,
     lens_radius: f32,
 }
 
@@ -47,7 +47,7 @@ impl Camera {
             vertical,
             u,
             v,
-            w,
+            // w,
             lens_radius,
         }
     }
